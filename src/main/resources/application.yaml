@@ -1,0 +1,13 @@
+applicaiton:
+  service:
+    url:
+      white:
+        - login
+        - admin
+        - swagger
+jwt:
+  token:
+    sig: helloworld
+#server:
+#  servlet:
+#    context-path: /api
