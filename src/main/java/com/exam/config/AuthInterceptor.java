@@ -10,15 +10,18 @@ import com.exam.properties.WhiteProperties;
 import com.exam.util.JwtUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -37,6 +40,10 @@ public class AuthInterceptor implements HandlerInterceptor {
     @Resource
     private JwtUtils jwtUtils;
 
+    @Value("${application.service.url.white}")
+    private List<String> white;
+
+    private Pattern pattern;
 
     /**
      * 1.服务端不需要存储用户的认证信息
@@ -79,24 +86,17 @@ public class AuthInterceptor implements HandlerInterceptor {
         String requestURL = request.getRequestURI();
         log.info("ip : {}, requestUrl : {}", ipAddress, requestURL);
         System.out.println("");
-        log.info("=========enter =================");
         if(isOptionRequest(request)){
             log.info("=============option method================");
             return true;
         }
         String uri = request.getRequestURI();
         log.info(uri);
-
-//        if(properties.getWhite().contains(uri)){
-//            return true;
-//        }
-        Pattern pattern = Pattern.compile(String.join("||", properties.getWhite()));
         if(pattern.matcher(uri).find()){
             return true;
         }
         boolean pass = checkLoginValid(request.getHeader("token"),response);
         if(!pass){
-            log.info("=========auth==============拦截");
             errAuth(response);
             return false;
         }
@@ -125,31 +125,31 @@ public class AuthInterceptor implements HandlerInterceptor {
 
     private boolean checkLoginValid(String token,HttpServletResponse response){
         if(null == token){
-            log.info("空token 进行拦截");
             return false;
         }
         boolean verify = jwtUtils.verify(token);
         if(!verify){
-            log.info("=======验证失败");
             return false;
         }
         JWT info = jwtUtils.getInfo(token);
         Long loginTime = (Long) info.getPayload("loginTime");
         Long timedif = DateUtil.date().getTime()-loginTime;
-        if(timedif>90*60*1000){
-            log.info("=========超时");
+        if(timedif>90*120*1000){
             return false;
         }
         Integer userId = (Integer) info.getPayload("userId");
         String userName = (String) info.getPayload("userName");
         Integer rule =   (Integer)info.getPayload("role");
         Current.setUserContext(new ContextUser(userId, userName, rule));
-        if(timedif>50*60*1000){
+        if(timedif>90*90*1000){
             log.info("重新刷新token");
             response.setHeader(token,jwtUtils.createToken(userId, userName, rule));
         }
-
-        log.info("====================token 验证通过===================");
         return true;
+    }
+
+    @PostConstruct
+    public void init(){
+        pattern = Pattern.compile(String.join("|", white));
     }
 }

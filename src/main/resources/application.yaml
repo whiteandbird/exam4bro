@@ -1,13 +1,17 @@
-applicaiton:
+application:
   service:
     url:
-      white:
-        - login
-        - admin
-        - swagger
+      white: login,swagger,error
 jwt:
   token:
     sig: helloworld
 #server:
 #  servlet:
 #    context-path: /api
+
+
+logging:
+  level: debug
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl

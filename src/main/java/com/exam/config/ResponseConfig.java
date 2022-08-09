@@ -31,8 +31,6 @@ public class ResponseConfig implements ResponseBodyAdvice {
 
     @Override
     public Object beforeBodyWrite(Object body, MethodParameter methodParameter, MediaType mediaType, Class aClass, ServerHttpRequest serverHttpRequest, ServerHttpResponse serverHttpResponse) {
-        System.out.println("===========拦截件=====================");
-        System.out.println(body);
         if (body instanceof String) {
             return JSON.toJSONString((new ApiResult(200,
                     "success", body)));
